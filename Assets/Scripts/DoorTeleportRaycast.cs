@@ -12,6 +12,7 @@ public class DoorTeleportRaycast : MonoBehaviour
     public float interactDistance = 3f;
     public KeyCode interactKey = KeyCode.E;
     public KeyCode interactKeyGamepad = KeyCode.JoystickButton2;
+    public KeyCode interactKeyMouse = KeyCode.Mouse0;
 
     [Header("Teleport")]
     public Transform player;
@@ -48,7 +49,7 @@ public class DoorTeleportRaycast : MonoBehaviour
         if (busy) return;
         
 
-        if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactKeyGamepad))
+        if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactKeyGamepad) || Input.GetKeyDown(interactKeyMouse))
         {
             if (Physics.Raycast(
                 playerCamera.transform.position,
