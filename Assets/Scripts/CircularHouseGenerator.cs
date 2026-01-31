@@ -34,7 +34,8 @@ public class CircularHouseGenerator : MonoBehaviour
         for (int i = 0; i < houseCount; i++)
         {
             float t = (float)i / (houseCount - 1); 
-            float angle = Mathf.Lerp(startAngle, endAngle, t) * Mathf.Deg2Rad;
+            float angle = Mathf.Lerp(startAngle + 180f, endAngle + 180f, t) * Mathf.Deg2Rad;
+
 
             Vector3 pos = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
 
