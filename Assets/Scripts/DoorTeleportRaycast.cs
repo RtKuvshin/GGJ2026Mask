@@ -14,10 +14,6 @@ public class DoorTeleportRaycast : MonoBehaviour
     public KeyCode interactKeyGamepad = KeyCode.JoystickButton2;
     public KeyCode interactKeyMouse = KeyCode.Mouse0;
 
-    [Header("Proximity Text")]
-    public float proximityRange = 5f;
-    public string proximityMessage = "Maybe it's time to leave";
-    
     [Header("Teleport")]
     public Transform player;
     public Transform teleportTarget;
@@ -51,23 +47,7 @@ public class DoorTeleportRaycast : MonoBehaviour
     void Update()
     {
         if (busy) return;
-
-
-        // Calculate distance to player
-        float distance = Vector3.Distance(player.position, transform.position);
-        bool isInRange = distance <= proximityRange;
-
-        // Show proximity text when in range and door hasn't been used
-        if (isInRange && !usedOnce)
-        {
-            thoughts.ShowThought(
-                proximityMessage,
-                2f,
-                3f,
-                0.03f,
-                Time.deltaTime * 2f  // Very short display time - refreshes each frame
-            );
-        }
+        
 
         if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactKeyGamepad) || Input.GetKeyDown(interactKeyMouse))
         {
