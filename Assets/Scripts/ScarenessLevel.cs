@@ -14,6 +14,10 @@ public class ScarenessLevel : MonoBehaviour
     [Header("Heartbeat Settings")]
     public float minBPM = 60f;
     public float maxBPM = 220f;
+    
+    [Header("Audio Settings")]
+    public float baseVolume = 0.2f;  // minimum volume
+    public float maxVolume = 1f; 
 
     [Header("UI References")]
     public Slider heartbeatSlider;
@@ -105,7 +109,7 @@ public class ScarenessLevel : MonoBehaviour
 
     void UpdateHeartbeatPulse()
     {
-        if (displayMode != DisplayMode.Heartbeat || heartbeatImage == null || audioSource == null) return;
+        if (heartbeatImage == null || audioSource == null) return;
 
         float beatInterval = 60f / Mathf.Max(1f, currentBPM); // full cycle in seconds
         float shortDelay = 0.25f; // delay between lub and dub
@@ -115,7 +119,7 @@ public class ScarenessLevel : MonoBehaviour
         switch (beatState)
         {
             case 0: // first beat
-                PulseHeart(0); // first beat clip
+                PulseHeart(0); 
                 beatState = 1;
                 beatTimer = 0f;
                 break;
@@ -123,7 +127,7 @@ public class ScarenessLevel : MonoBehaviour
             case 1: // second beat
                 if (beatTimer >= shortDelay)
                 {
-                    PulseHeart(1); // second beat clip
+                    PulseHeart(1); 
                     beatState = 2;
                     beatTimer = 0f;
                 }
@@ -138,23 +142,31 @@ public class ScarenessLevel : MonoBehaviour
                 break;
         }
 
-        // smooth return scale
-        heartbeatImage.transform.localScale = Vector3.Lerp(
-            heartbeatImage.transform.localScale,
-            baseHeartScale,
-            Time.deltaTime * returnSpeed
-        );
+        // smooth return scale (only if image exists)
+        if (heartbeatImage != null)
+        {
+            heartbeatImage.transform.localScale = Vector3.Lerp(
+                heartbeatImage.transform.localScale,
+                baseHeartScale,
+                Time.deltaTime * returnSpeed
+            );
+        }
     }
-    
+
     void PulseHeart(int beatNumber)
     {
-        heartbeatImage.transform.localScale = baseHeartScale * pulseScale;
-    
+        // scale pulse only if image exists
+        if (heartbeatImage != null)
+            heartbeatImage.transform.localScale = baseHeartScale * pulseScale;
+
+        float volume = Mathf.Lerp(baseVolume, maxVolume, normalizedValue); // louder as fear rises
+
         if (beatNumber == 0 && heartbeatClip1 != null)
-            audioSource.PlayOneShot(heartbeatClip1);
+            audioSource.PlayOneShot(heartbeatClip1, volume);
         else if (beatNumber == 1 && heartbeatClip2 != null)
-            audioSource.PlayOneShot(heartbeatClip2);
+            audioSource.PlayOneShot(heartbeatClip2, volume);
     }
+
 
     void UpdateHeartbeatText()
     {
