@@ -15,6 +15,9 @@ public class ScarenessLevel : MonoBehaviour
     [Range(0f, 1f)] public float maxDarknessAlpha = 1f;
     public bool dimLights = true;
     public bool useFog = true;
+    [Header("Fear Start")]
+    [Range(0f, 1f)] public float startFear = 0.3f;
+
 
     [Header("Heartbeat Settings")]
     public float minBPM = 60f;
@@ -34,7 +37,6 @@ public class ScarenessLevel : MonoBehaviour
     public float returnSpeed = 10f;
 
     [Header("Line Graph")]
-    public UIBPMGraph bpmGraph;
     public float spikeHeightMultiplier = 1f;
 
     [Header("Audio")]
@@ -59,9 +61,7 @@ public class ScarenessLevel : MonoBehaviour
     {
         if (heartbeatImage)
             baseHeartScale = heartbeatImage.transform.localScale;
-
-        if (bpmGraph == null)
-            bpmGraph = GetComponentInChildren<UIBPMGraph>();
+        
 
         if (dimLights)
         {
@@ -86,15 +86,30 @@ public class ScarenessLevel : MonoBehaviour
         UpdateUI();
         UpdateHeartbeatPulse();
         UpdateHeartbeatText();
-        UpdateGraph();
+    }
+    private bool _overrideBPM = false;
+    private float _overrideValue;
+
+    public void OverrideBPM(float bpm)
+    {
+        _overrideBPM = true;
+        _overrideValue = Mathf.Clamp(bpm, minBPM, maxBPM);
     }
 
+// Inside UpdateScareness(), at the start
     void UpdateScareness()
     {
+        if (_overrideBPM)
+        {
+            currentBPM = _overrideValue;
+            normalizedValue = (currentBPM - minBPM) / (maxBPM - minBPM);
+            return; // skip normal time-based calculation
+        }
+
         elapsedTime += Time.deltaTime;
         float maxTime = Mathf.Max(0.01f, timeToMaxMinutes) * 60f;
-
-        normalizedValue = Mathf.Clamp01(elapsedTime / maxTime);
+        float t = Mathf.Clamp01(elapsedTime / maxTime);
+        normalizedValue = Mathf.Lerp(startFear, 1f, t);
         currentBPM = Mathf.Lerp(minBPM, maxBPM, normalizedValue);
     }
 
@@ -123,7 +138,6 @@ public class ScarenessLevel : MonoBehaviour
         if (heartbeatSlider) heartbeatSlider.gameObject.SetActive(slider);
         if (heartbeatImage) heartbeatImage.gameObject.SetActive(heart);
         if (heartbeatText) heartbeatText.gameObject.SetActive(heart);
-        if (bpmGraph) bpmGraph.gameObject.SetActive(heart);
     }
 
     void UpdateHeartbeatPulse()
@@ -186,14 +200,7 @@ public class ScarenessLevel : MonoBehaviour
         if (heartbeatText)
             heartbeatText.text = Mathf.RoundToInt(currentBPM).ToString();
     }
-
-    void UpdateGraph()
-    {
-        if (!bpmGraph) return;
-
-        bpmGraph.bpm = currentBPM;
-        bpmGraph.pulseHeight = 60f * (1f + normalizedValue * spikeHeightMultiplier);
-    }
+    
 
     void UpdateAtmosphere()
     {
@@ -260,6 +267,7 @@ public class ScarenessLevel : MonoBehaviour
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f);
     }
+
 
     public float GetCurrentBPM() => currentBPM;
     public float GetFearLevel() => normalizedValue;

@@ -115,6 +115,9 @@ public class DoorTeleportRaycast : MonoBehaviour
 
         usedOnce = true;   // 🔒 FIRST USE DONE
         busy = false;
+
+        yield return new WaitForSeconds(30f); ;
+
     }
 
    

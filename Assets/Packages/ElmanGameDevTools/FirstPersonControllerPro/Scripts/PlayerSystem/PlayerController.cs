@@ -39,6 +39,13 @@ namespace ElmanGameDevTools.PlayerSystem
         [Header("GROUND CHECK")]
         public LayerMask groundLayer = 1;
         public float groundCheckDistance = 0.5f;
+        [Header("FOOTSTEPS")]
+        public AudioSource footstepSource;
+        public AudioClip[] footstepClips;
+        public float stepInterval = 0.5f; // lower = faster steps
+        public float minMoveThreshold = 0.2f;
+        private float _stepTimer;
+
 
         private Vector3 _velocity;
         private bool _isGrounded;
@@ -46,13 +53,14 @@ namespace ElmanGameDevTools.PlayerSystem
         private float _targetYaw;
         private float _targetPitch;
         private float _currentYaw;
-        private float _currentPitch;
+        public float _currentPitch;
         private float _smoothInputX;
         private float _currentTilt;
 
         private float _headBobTimer;
-        private float _cameraBaseHeight;
+        private float _cameraBaseHeight;    
         public bool inputLocked = false;
+        public bool cinematicMode = false;
 
 
         private void Start()
@@ -73,13 +81,15 @@ namespace ElmanGameDevTools.PlayerSystem
 
         private void Update()
         {
-            if (inputLocked)
+            if (inputLocked || cinematicMode)
                 return;
 
             CheckGround();
             HandleMovement();
             HandleMouseLook();
             HandleCameraTilt();
+            HandleFootsteps();
+
 
             if (enableHeadBob)
                 HandleHeadBob();
@@ -101,6 +111,41 @@ namespace ElmanGameDevTools.PlayerSystem
             if (_isGrounded && _velocity.y < 0f)
                 _velocity.y = -5f;
         }
+        private void HandleFootsteps()
+        {
+            if (!_isGrounded)
+                return;
+
+            float moveMag = new Vector2(
+                Input.GetAxis("Horizontal"),
+                Input.GetAxis("Vertical")
+            ).magnitude;
+
+            if (moveMag < minMoveThreshold)
+            {
+                _stepTimer = 0f;
+                return;
+            }
+
+            _stepTimer += Time.deltaTime * moveMag;
+
+            if (_stepTimer >= stepInterval)
+            {
+                PlayFootstep();
+                _stepTimer = 0f;
+            }
+        }
+        private void PlayFootstep()
+        {
+            if (footstepClips.Length == 0)
+                return;
+
+            AudioClip clip = footstepClips[Random.Range(0, footstepClips.Length)];
+            footstepSource.pitch = Random.Range(0.9f, 1.1f);
+            footstepSource.volume = 0.2f;
+            footstepSource.PlayOneShot(clip);
+        }
+
 
         private void HandleMovement()
         {
