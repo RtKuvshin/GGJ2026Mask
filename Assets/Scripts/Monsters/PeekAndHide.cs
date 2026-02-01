@@ -5,19 +5,21 @@ public class PeekAndHide : MonoBehaviour
     [Header("References")]
     public Transform player;
     public GameObject model;
+    public ScarenessLevel scarenessLevel; // optional, for fear effects
+
+    [Header("Activation")]
+    [HideInInspector] public bool isActivated = false;
 
     [Header("Radius")]
     public float outerRadius = 10f; // start peeking
     public float hideRadius = 2f;   // start hiding behind corner
 
-    [Header("Peek Movement")]
+    [Header("Peek Movement")] 
     public Vector3 peekOffsetLocal = new Vector3(0.6f, 0f, 0f);  // peek to the side
-    public Vector3 hideOffsetLocal = new Vector3(-0.6f, 0f, 0f); // move “back” behind corner
+    public Vector3 hideOffsetLocal = new Vector3(-0.6f, 0f, 0f); // move behind corner
     public float moveSpeed = 4f;
     public float moveSpeedHide = 20f;
-    private bool shouldHide = false;
     [HideInInspector] public bool isDisabled = false;
-
 
     // internal
     Vector3 idleLocalPos;
@@ -32,55 +34,50 @@ public class PeekAndHide : MonoBehaviour
         idleLocalPos = model.transform.localPosition;
         peekLocalPos = idleLocalPos + peekOffsetLocal;
         hideLocalPos = idleLocalPos + hideOffsetLocal;
+        
+    }
+
+    public void ActivatePAH()
+    {
+        isActivated = true;
+        model.SetActive(true); // make him visible immediately when activated
     }
 
     void Update()
     {
-        if (player == null || model == null || isDisabled) return; // stop everything if disabled
+        if (player == null || model == null || isDisabled || !isActivated) return;
 
         float dist = Vector3.Distance(player.position, model.transform.position);
 
-        // Decide target position
         Vector3 targetPos = idleLocalPos;
-        float speed = moveSpeed; // default peek/idle speed
+        float speed = moveSpeed;
 
         if (dist <= hideRadius)
         {
             targetPos = hideLocalPos;
             speed = moveSpeedHide;
-            shouldHide = true;
+            model.SetActive(false); // hide immediately
         }
-        else if (dist <= outerRadius && dist > hideRadius)
+        else if (dist <= outerRadius)
         {
             targetPos = peekLocalPos;
             speed = moveSpeed;
-            shouldHide = false;
+            model.SetActive(true); // peek
         }
         else
         {
             targetPos = idleLocalPos;
             speed = moveSpeed;
+            model.SetActive(true); // idle
         }
-        
 
-        // Make sure the model is active unless we want to hide
-        if (!model.activeSelf && !shouldHide) model.SetActive(true);
-
-        MoveModelTowards(targetPos, speed, shouldHide);
+        MoveModelTowards(targetPos, speed);
     }
 
-
-    void MoveModelTowards(Vector3 targetLocal, float speed, bool hideAtTarget)
+    void MoveModelTowards(Vector3 targetLocal, float speed)
     {
         model.transform.localPosition = Vector3.MoveTowards(model.transform.localPosition, targetLocal, speed * Time.deltaTime);
-
-        // If we’re hiding and reached target, disable the model
-        if (hideAtTarget && Vector3.Distance(model.transform.localPosition, targetLocal) < 0.01f)
-        {
-            model.SetActive(false);
-        }
     }
-    
 
     void OnDrawGizmosSelected()
     {

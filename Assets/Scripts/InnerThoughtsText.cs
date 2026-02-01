@@ -12,47 +12,132 @@ public class InnerThoughtText : MonoBehaviour
     Coroutine typingRoutine;
     Coroutine wobbleRoutine;
 
+    string[] currentMessages;
+    int currentIndex;
+    float letterMoveHeight;
+    float letterMoveSpeed;
+    float typingSpeed;
+    float messageLifeTime;
+
     void Awake()
     {
         textMesh.text = "";
     }
 
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && typingRoutine != null)
+        {
+            SkipCurrentThought();
+        }
+    }
+
     /// <summary>
-    /// Shows inner thoughts with typing + wobble effect
+    /// Starts showing a series of thoughts
     /// </summary>
+    public void ShowThoughts(
+        string[] messages,
+        float letterMoveHeight = 4f,
+        float letterMoveSpeed = 4f,
+        float typingSpeed = 0.04f,
+        float messageLifeTime = 3f
+    )
+    {
+        if (typingRoutine != null) StopCoroutine(typingRoutine);
+        if (wobbleRoutine != null) StopCoroutine(wobbleRoutine);
+
+        currentMessages = messages;
+        currentIndex = 0;
+        this.letterMoveHeight = letterMoveHeight;
+        this.letterMoveSpeed = letterMoveSpeed;
+        this.typingSpeed = typingSpeed;
+        this.messageLifeTime = messageLifeTime;
+
+        StartCoroutine(ShowNextThought());
+    }
     public void ShowThought(
-        string text,
+        string message,
         float letterMoveHeight = 4f,
         float letterMoveSpeed = 4f,
         float typingSpeed = 0.04f,
         float lifeTime = 3f
     )
     {
-        if (typingRoutine != null) StopCoroutine(typingRoutine);
-        if (wobbleRoutine != null) StopCoroutine(wobbleRoutine);
-
-        typingRoutine = StartCoroutine(TypeText(text, typingSpeed, letterMoveHeight, letterMoveSpeed, lifeTime));
+        ShowThoughts(new string[] { message }, letterMoveHeight, letterMoveSpeed, typingSpeed, lifeTime);
     }
 
-    IEnumerator TypeText(string fullText, float typingSpeed, float moveHeight, float moveSpeed, float lifeTime)
+
+    private IEnumerator ShowNextThought()
     {
+        if (currentIndex >= currentMessages.Length)
+        {
+            // done with all thoughts
+            textMesh.text = "";
+            textBg.SetActive(false);
+            yield break;
+        }
+
+        string fullText = currentMessages[currentIndex];
+        currentIndex++;
+
         textBg.SetActive(true);
         textMesh.text = "";
         textMesh.ForceMeshUpdate();
 
+        // typing
+        typingRoutine = StartCoroutine(TypeText(fullText, typingSpeed));
+
+        yield return typingRoutine;
+
+        // wobble
+        wobbleRoutine = StartCoroutine(WobbleText(letterMoveHeight, letterMoveSpeed));
+
+        yield return new WaitForSeconds(messageLifeTime);
+
+        if (wobbleRoutine != null)
+        {
+            StopCoroutine(wobbleRoutine);
+            wobbleRoutine = null;
+        }
+
+        textMesh.text = "";
+
+        // automatically go to next
+        StartCoroutine(ShowNextThought());
+    }
+
+    private IEnumerator TypeText(string fullText, float speed)
+    {
         for (int i = 0; i <= fullText.Length; i++)
         {
             textMesh.text = fullText.Substring(0, i);
-            yield return new WaitForSeconds(typingSpeed);
+            yield return new WaitForSeconds(speed);
+        }
+    }
+
+    private void SkipCurrentThought()
+    {
+        if (typingRoutine != null)
+        {
+            StopCoroutine(typingRoutine);
+            typingRoutine = null;
         }
 
-        wobbleRoutine = StartCoroutine(WobbleText(moveHeight, moveSpeed));
+        if (wobbleRoutine != null)
+        {
+            StopCoroutine(wobbleRoutine);
+            wobbleRoutine = null;
+        }
 
-        yield return new WaitForSeconds(lifeTime);
+        // immediately show full text (optional)
+        if (currentIndex > 0)
+            textMesh.text = currentMessages[currentIndex - 1];
 
-        StopCoroutine(wobbleRoutine);
-        textMesh.text = "";
+        // hide text and start next thought
         textBg.SetActive(false);
+
+        // start next thought
+        StartCoroutine(ShowNextThought());
     }
 
     IEnumerator WobbleText(float height, float speed)

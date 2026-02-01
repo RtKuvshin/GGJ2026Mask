@@ -40,10 +40,8 @@ public class MonologueBeginning : MonoBehaviour
         yield return new WaitForSeconds(0.2f); // tiny delay for black to settle
 
         // show all messages
-        foreach (string msg in messages)
-        {
-            thoughts.ShowThought(
-                msg,
+        thoughts.ShowThoughts(
+                messages,
                 letterHeight,
                 letterSpeed,
                 typingSpeed,
@@ -51,7 +49,7 @@ public class MonologueBeginning : MonoBehaviour
             );
 
             yield return new WaitForSeconds(messageLifeTime + delayBetweenMessages);
-        }
+        
 
         // fade in
         yield return StartCoroutine(Fade(1f, 0f));

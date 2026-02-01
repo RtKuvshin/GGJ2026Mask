@@ -22,6 +22,8 @@ public class ScarenessLevel : MonoBehaviour
     [Header("Heartbeat Settings")]
     public float minBPM = 60f;
     public float maxBPM = 220f;
+    public float fearIncreaseMultiplier = 1f; // default 1 = normal speed
+
 
     [Header("Audio Settings")]
     public float baseVolume = 0.2f;
@@ -107,11 +109,16 @@ public class ScarenessLevel : MonoBehaviour
         }
 
         elapsedTime += Time.deltaTime;
+
         float maxTime = Mathf.Max(0.01f, timeToMaxMinutes) * 60f;
         float t = Mathf.Clamp01(elapsedTime / maxTime);
-        normalizedValue = Mathf.Lerp(startFear, 1f, t);
+
+        // multiply the increase by the multiplier
+        normalizedValue += (Mathf.Lerp(startFear, 1f, t) - normalizedValue) * fearIncreaseMultiplier * Time.deltaTime;
+
         currentBPM = Mathf.Lerp(minBPM, maxBPM, normalizedValue);
     }
+
 
     void UpdateUI()
     {
